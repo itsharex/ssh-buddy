@@ -1,0 +1,661 @@
+/* JetBrains Mono - Terminal Font */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@import 'tailwindcss';
+
+@layer base {
+  /* Dark Theme Only - SSH Buddy Phosphor Green Design System */
+  :root {
+    /* Background Colors - Deeper, more dramatic */
+    --background: 220 25% 4%;
+    --foreground: 120 20% 90%;
+    --card: 220 22% 7%;
+    --card-foreground: 120 15% 88%;
+    --popover: 220 22% 9%;
+    --popover-foreground: 120 15% 88%;
+
+    /* Primary Colors - Phosphor Green */
+    --primary: 120 100% 45%;
+    --primary-foreground: 120 100% 5%;
+    --primary-muted: 120 60% 30%;
+
+    /* Secondary Colors */
+    --secondary: 220 20% 14%;
+    --secondary-foreground: 120 15% 85%;
+
+    /* Muted Colors */
+    --muted: 220 20% 12%;
+    --muted-foreground: 120 10% 50%;
+
+    /* Accent Colors - Subtle green highlight (not too bright) */
+    --accent: 120 40% 15%;
+    --accent-foreground: 120 80% 85%;
+
+    /* Functional Colors */
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 120 100% 45%;
+    --success-foreground: 120 100% 5%;
+    --warning: 45 100% 50%;
+    --warning-foreground: 45 100% 10%;
+
+    /* Border and Input */
+    --border: 120 30% 15%;
+    --input: 220 20% 16%;
+    --ring: 120 100% 45%;
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Terminal Glow Effects */
+    --terminal-glow: 120 100% 45%;
+    --glow-intensity: 0.25;
+    --glow-spread: 20px;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    font-feature-settings: 'rlig' 1, 'calt' 1, 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Custom utilities for shadcn/ui color system */
+@utility bg-background {
+  background-color: hsl(var(--background));
+}
+
+@utility bg-foreground {
+  background-color: hsl(var(--foreground));
+}
+
+@utility bg-card {
+  background-color: hsl(var(--card));
+}
+
+@utility bg-card-foreground {
+  background-color: hsl(var(--card-foreground));
+}
+
+@utility bg-popover {
+  background-color: hsl(var(--popover));
+}
+
+@utility bg-popover-foreground {
+  background-color: hsl(var(--popover-foreground));
+}
+
+@utility bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+@utility bg-primary-foreground {
+  background-color: hsl(var(--primary-foreground));
+}
+
+@utility bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+@utility bg-secondary-foreground {
+  background-color: hsl(var(--secondary-foreground));
+}
+
+@utility bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+@utility bg-muted-foreground {
+  background-color: hsl(var(--muted-foreground));
+}
+
+@utility bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+@utility bg-accent-foreground {
+  background-color: hsl(var(--accent-foreground));
+}
+
+@utility bg-destructive {
+  background-color: hsl(var(--destructive));
+}
+
+@utility bg-destructive-foreground {
+  background-color: hsl(var(--destructive-foreground));
+}
+
+@utility bg-success {
+  background-color: hsl(var(--success));
+}
+
+@utility bg-success-foreground {
+  background-color: hsl(var(--success-foreground));
+}
+
+@utility bg-warning {
+  background-color: hsl(var(--warning));
+}
+
+@utility bg-warning-foreground {
+  background-color: hsl(var(--warning-foreground));
+}
+
+@utility bg-border {
+  background-color: hsl(var(--border));
+}
+
+@utility bg-input {
+  background-color: hsl(var(--input));
+}
+
+@utility bg-ring {
+  background-color: hsl(var(--ring));
+}
+
+/* Text color utilities */
+@utility text-background {
+  color: hsl(var(--background));
+}
+
+@utility text-foreground {
+  color: hsl(var(--foreground));
+}
+
+@utility text-card {
+  color: hsl(var(--card));
+}
+
+@utility text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
+@utility text-popover {
+  color: hsl(var(--popover));
+}
+
+@utility text-popover-foreground {
+  color: hsl(var(--popover-foreground));
+}
+
+@utility text-primary {
+  color: hsl(var(--primary));
+}
+
+@utility text-primary-foreground {
+  color: hsl(var(--primary-foreground));
+}
+
+@utility text-secondary {
+  color: hsl(var(--secondary));
+}
+
+@utility text-secondary-foreground {
+  color: hsl(var(--secondary-foreground));
+}
+
+@utility text-muted {
+  color: hsl(var(--muted));
+}
+
+@utility text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+@utility text-accent {
+  color: hsl(var(--accent));
+}
+
+@utility text-accent-foreground {
+  color: hsl(var(--accent-foreground));
+}
+
+@utility text-destructive {
+  color: hsl(var(--destructive));
+}
+
+@utility text-destructive-foreground {
+  color: hsl(var(--destructive-foreground));
+}
+
+@utility text-success {
+  color: hsl(var(--success));
+}
+
+@utility text-warning {
+  color: hsl(var(--warning));
+}
+
+/* Border color utilities */
+@utility border-border {
+  border-color: hsl(var(--border));
+}
+
+@utility border-input {
+  border-color: hsl(var(--input));
+}
+
+@utility border-ring {
+  border-color: hsl(var(--ring));
+}
+
+@utility border-primary {
+  border-color: hsl(var(--primary));
+}
+
+@utility border-secondary {
+  border-color: hsl(var(--secondary));
+}
+
+@utility border-destructive {
+  border-color: hsl(var(--destructive));
+}
+
+@utility border-success {
+  border-color: hsl(var(--success));
+}
+
+@utility border-warning {
+  border-color: hsl(var(--warning));
+}
+
+@utility border-muted {
+  border-color: hsl(var(--muted));
+}
+
+@utility border-accent {
+  border-color: hsl(var(--accent));
+}
+
+/* Ring utilities */
+@utility ring-ring {
+  --tw-ring-color: hsl(var(--ring));
+}
+
+@utility ring-primary {
+  --tw-ring-color: hsl(var(--primary));
+}
+
+@utility ring-destructive {
+  --tw-ring-color: hsl(var(--destructive));
+}
+
+@utility ring-success {
+  --tw-ring-color: hsl(var(--success));
+}
+
+/* Radius utilities */
+@theme {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@utility animate-fade-in {
+  animation: fadeIn 200ms ease-out;
+}
+
+@utility animate-slide-in-left {
+  animation: slideInFromLeft 200ms ease-out;
+}
+
+@utility animate-slide-in-right {
+  animation: slideInFromRight 200ms ease-out;
+}
+
+@utility animate-slide-in-bottom {
+  animation: slideInFromBottom 200ms ease-out;
+}
+
+@utility animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* Gradient utilities */
+@utility bg-gradient-sidebar {
+  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
+}
+
+/* Glass effect */
+@utility bg-glass {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* Focus visible override for better accessibility */
+@utility focus-ring {
+  outline: none;
+  ring: 2px;
+  ring-offset: 2px;
+  ring-offset-color: hsl(var(--background));
+  --tw-ring-color: hsl(var(--ring));
+}
+
+/* ============================================
+   TERMINAL CRAFT - Phosphor Green Theme
+   ============================================ */
+
+/* Terminal Glow Effect */
+@utility terminal-glow {
+  box-shadow:
+    0 0 var(--glow-spread) hsl(var(--terminal-glow) / var(--glow-intensity)),
+    inset 0 0 20px hsl(var(--terminal-glow) / 0.05);
+}
+
+@utility terminal-glow-sm {
+  box-shadow: 0 0 10px hsl(var(--terminal-glow) / 0.15);
+}
+
+@utility terminal-glow-lg {
+  box-shadow:
+    0 0 30px hsl(var(--terminal-glow) / 0.3),
+    0 0 60px hsl(var(--terminal-glow) / 0.15);
+}
+
+/* Text Glow */
+@utility text-glow {
+  text-shadow: 0 0 10px hsl(var(--terminal-glow) / 0.5);
+}
+
+@utility text-glow-sm {
+  text-shadow: 0 0 5px hsl(var(--terminal-glow) / 0.3);
+}
+
+/* Octagon Shape - Terminal Style Corners */
+@utility clip-octagon {
+  clip-path: polygon(
+    10% 0%, 90% 0%,
+    100% 10%, 100% 90%,
+    90% 100%, 10% 100%,
+    0% 90%, 0% 10%
+  );
+}
+
+@utility clip-octagon-sm {
+  clip-path: polygon(
+    5% 0%, 95% 0%,
+    100% 5%, 100% 95%,
+    95% 100%, 5% 100%,
+    0% 95%, 0% 5%
+  );
+}
+
+/* Terminal Border Style */
+@utility border-terminal {
+  border: 1px solid hsl(var(--primary) / 0.3);
+}
+
+@utility border-terminal-active {
+  border: 1px solid hsl(var(--primary) / 0.6);
+}
+
+/* Terminal Background with subtle grid */
+@utility bg-terminal-grid {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Typing cursor animation */
+@keyframes blink-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@utility animate-cursor {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+/* Terminal pulse - for status indicators */
+@keyframes terminal-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--terminal-glow) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px hsl(var(--terminal-glow) / 0.8);
+  }
+}
+
+@utility animate-terminal-pulse {
+  animation: terminal-pulse 2s ease-in-out infinite;
+}
+
+/* Mascot walking animation - healing pet style */
+@keyframes walk {
+  0% {
+    transform: translateX(0) scaleX(-1) translateY(0);
+  }
+  /* Walking right with bobbing */
+  4% {
+    transform: translateX(8px) scaleX(-1) translateY(-1px);
+  }
+  8% {
+    transform: translateX(16px) scaleX(-1) translateY(0);
+  }
+  12% {
+    transform: translateX(24px) scaleX(-1) translateY(-1px);
+  }
+  16% {
+    transform: translateX(32px) scaleX(-1) translateY(0);
+  }
+  20% {
+    transform: translateX(40px) scaleX(-1) translateY(-1px);
+  }
+  24% {
+    transform: translateX(48px) scaleX(-1) translateY(0);
+  }
+  28% {
+    transform: translateX(56px) scaleX(-1) translateY(-1px);
+  }
+  32% {
+    transform: translateX(64px) scaleX(-1) translateY(0);
+  }
+  36% {
+    transform: translateX(72px) scaleX(-1) translateY(-1px);
+  }
+  40% {
+    transform: translateX(80px) scaleX(-1) translateY(0);
+  }
+  /* Pause and look around */
+  42% {
+    transform: translateX(80px) scaleX(-1) translateY(0) rotate(5deg);
+  }
+  44% {
+    transform: translateX(80px) scaleX(-1) translateY(0) rotate(-5deg);
+  }
+  46% {
+    transform: translateX(80px) scaleX(-1) translateY(0) rotate(0deg);
+  }
+  /* Turn around */
+  50% {
+    transform: translateX(80px) scaleX(1) translateY(0);
+  }
+  /* Walking left with bobbing */
+  54% {
+    transform: translateX(72px) scaleX(1) translateY(-1px);
+  }
+  58% {
+    transform: translateX(64px) scaleX(1) translateY(0);
+  }
+  62% {
+    transform: translateX(56px) scaleX(1) translateY(-1px);
+  }
+  66% {
+    transform: translateX(48px) scaleX(1) translateY(0);
+  }
+  70% {
+    transform: translateX(40px) scaleX(1) translateY(-1px);
+  }
+  74% {
+    transform: translateX(32px) scaleX(1) translateY(0);
+  }
+  78% {
+    transform: translateX(24px) scaleX(1) translateY(-1px);
+  }
+  82% {
+    transform: translateX(16px) scaleX(1) translateY(0);
+  }
+  86% {
+    transform: translateX(8px) scaleX(1) translateY(-1px);
+  }
+  90% {
+    transform: translateX(0) scaleX(1) translateY(0);
+  }
+  /* Rest and breathe */
+  92% {
+    transform: translateX(0) scaleX(1) translateY(-1px);
+  }
+  94% {
+    transform: translateX(0) scaleX(1) translateY(0);
+  }
+  96% {
+    transform: translateX(0) scaleX(1) translateY(-1px);
+  }
+  98% {
+    transform: translateX(0) scaleX(1) translateY(0);
+  }
+  100% {
+    transform: translateX(0) scaleX(-1) translateY(0);
+  }
+}
+
+@utility animate-walk {
+  animation: walk 12s ease-in-out infinite;
+}
+
+/* Hover glow transition */
+@utility hover-glow {
+  transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+
+  &:hover {
+    box-shadow: 0 0 15px hsl(var(--terminal-glow) / 0.25);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+}
+
+/* Status indicator dot */
+@utility status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.6);
+}
+
+@utility status-dot-inactive {
+  background-color: hsl(var(--muted-foreground));
+  box-shadow: none;
+}
+
+/* Terminal card style */
+@utility terminal-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--primary) / 0.2);
+  box-shadow:
+    0 0 20px hsl(var(--terminal-glow) / 0.1),
+    inset 0 1px 0 hsl(var(--primary) / 0.1);
+}
+
+/* Primary muted utility */
+@utility bg-primary-muted {
+  background-color: hsl(var(--primary-muted));
+}
+
+@utility text-primary-muted {
+  color: hsl(var(--primary-muted));
+}
+
+@utility border-primary-muted {
+  border-color: hsl(var(--primary-muted));
+}

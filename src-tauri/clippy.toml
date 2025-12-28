@@ -1,0 +1,5 @@
+# Clippy configuration for SSH Buddy
+# See: https://doc.rust-lang.org/clippy/configuration.html
+
+# Allow slightly longer cognitive complexity for Tauri commands
+cognitive-complexity-threshold = 30

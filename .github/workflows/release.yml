@@ -1,0 +1,282 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: false
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  generate-release-notes:
+    runs-on: ubuntu-latest
+    outputs:
+      release_body: ${{ steps.notes.outputs.body }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          # Get the latest release tag (excluding current tag)
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          LAST_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -1)
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "body=Initial release" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Generate release notes
+          BODY=$(cat << 'HEREDOC'
+          ## What's Changed
+
+          HEREDOC
+          )
+
+          # Get commits and categorize
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORES=""
+          REPO_URL="https://github.com/${{ github.repository }}"
+
+          while IFS='|' read -r hash subject; do
+            [ -z "$subject" ] && continue
+            SHORT_HASH="${hash:0:7}"
+            COMMIT_LINK="([${SHORT_HASH}](${REPO_URL}/commit/${hash}))"
+            if [[ "$subject" =~ ^feat ]]; then
+              msg=$(echo "$subject" | sed -E 's/^feat(\([^)]+\))?:\s*//' | sed 's/^ *//')
+              msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+              FEATURES="${FEATURES}- ${msg} ${COMMIT_LINK}\n"
+            elif [[ "$subject" =~ ^fix ]]; then
+              msg=$(echo "$subject" | sed -E 's/^fix(\([^)]+\))?:\s*//' | sed 's/^ *//')
+              msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+              FIXES="${FIXES}- ${msg} ${COMMIT_LINK}\n"
+            elif [[ "$subject" =~ ^docs ]]; then
+              msg=$(echo "$subject" | sed -E 's/^docs(\([^)]+\))?:\s*//' | sed 's/^ *//')
+              msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+              DOCS="${DOCS}- ${msg} ${COMMIT_LINK}\n"
+            elif [[ "$subject" =~ ^(chore|ci|build|refactor|perf|test|style) ]]; then
+              msg=$(echo "$subject" | sed -E 's/^(chore|ci|build|refactor|perf|test|style)(\([^)]+\))?:\s*//' | sed 's/^ *//')
+              msg="$(echo "${msg:0:1}" | tr '[:lower:]' '[:upper:]')${msg:1}"
+              CHORES="${CHORES}- ${msg} ${COMMIT_LINK}\n"
+            fi
+          done <<< "$(git log "$LAST_TAG"..HEAD --pretty=format:"%H|%s" --no-merges | grep -v "|release")"
+
+          BODY=""
+          [ -n "$FEATURES" ] && BODY="${BODY}### ✨ New Features\n\n${FEATURES}\n"
+          [ -n "$FIXES" ] && BODY="${BODY}### 🐛 Bug Fixes\n\n${FIXES}\n"
+          [ -n "$DOCS" ] && BODY="${BODY}### 📚 Documentation\n\n${DOCS}\n"
+          [ -n "$CHORES" ] && BODY="${BODY}### 🔧 Maintenance\n\n${CHORES}\n"
+
+          BODY="${BODY}---\n**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${CURRENT_TAG}"
+
+          # Use delimiter for multiline output
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  build-macos:
+    needs: generate-release-notes
+    runs-on: macos-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        target: [aarch64-apple-darwin]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: true
+          cache-all-crates: true
+          key: ${{ matrix.target }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Import Apple certificate
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          # Create a temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # Import certificate
+          echo "$APPLE_CERTIFICATE" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          # Allow codesign to access the certificate
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'SSH Buddy v__VERSION__'
+          releaseBody: ${{ needs.generate-release-notes.outputs.release_body }}
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+
+  build-windows:
+    needs: generate-release-notes
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: true
+          cache-all-crates: true
+          key: windows
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'SSH Buddy v__VERSION__'
+          releaseBody: ${{ needs.generate-release-notes.outputs.release_body }}
+          releaseDraft: true
+          prerelease: false
+
+  update-homebrew:
+    needs: build-macos
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Wait for release assets
+        run: sleep 60
+
+      - name: Download and calculate SHA256
+        id: sha
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          curl -L "https://github.com/runkids/ssh-buddy/releases/download/v${VERSION}/SSH.Buddy_${VERSION}_aarch64.dmg" -o aarch64.dmg
+          echo "SHA256_AARCH64=$(shasum -a 256 aarch64.dmg | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: runkids/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Cask
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          SHA256=${{ steps.sha.outputs.SHA256_AARCH64 }}
+
+          cat > homebrew-tap/Casks/ssh-buddy.rb << 'EOF'
+          cask "ssh-buddy" do
+            version "VERSION_PLACEHOLDER"
+            sha256 "SHA256_PLACEHOLDER"
+
+            url "https://github.com/runkids/ssh-buddy/releases/download/v#{version}/SSH.Buddy_#{version}_aarch64.dmg"
+            name "SSH Buddy"
+            desc "A friendly SSH config and key manager for macOS"
+            homepage "https://github.com/runkids/ssh-buddy"
+
+            depends_on macos: ">= :catalina"
+
+            app "SSH Buddy.app"
+
+            zap trash: [
+              "~/Library/Application Support/com.sshbuddy",
+              "~/Library/Caches/com.sshbuddy",
+              "~/Library/Preferences/com.sshbuddy.plist",
+            ]
+          end
+          EOF
+
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" homebrew-tap/Casks/ssh-buddy.rb
+          sed -i "s/SHA256_PLACEHOLDER/${SHA256}/g" homebrew-tap/Casks/ssh-buddy.rb
+
+      - name: Commit and push
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/ssh-buddy.rb
+          git commit -m "Update ssh-buddy to ${{ steps.version.outputs.VERSION }}"
+          git push

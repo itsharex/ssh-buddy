@@ -14,14 +14,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ssh-buddy/ssh-buddy/releases">Download latest release</a>
+  <a href="https://github.com/runkids/ssh-buddy/releases">Download latest release</a>
 </p>
 
 <p align="center">
   <img alt="macOS" src="https://img.shields.io/badge/macOS-supported-1f2937">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-supported-1f2937">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-1f2937">
-  <img alt="Release" src="https://img.shields.io/github/v/release/ssh-buddy/ssh-buddy">
+  <img alt="Release" src="https://img.shields.io/github/v/release/runkids/ssh-buddy">
 </p>
 
 ## Why SSH Buddy
@@ -78,7 +78,12 @@ SSH Buddy is designed to work completely offline. Your configuration and keys ne
 
 ### macOS
 
-Download the latest `.dmg` from Releases and drag to Applications.
+```bash
+# Install via Homebrew
+brew tap runkids/tap && brew install --cask ssh-buddy
+```
+
+Or download the latest `.dmg` from Releases and drag to Applications.
 
 ### Windows
 
@@ -105,7 +110,7 @@ SSH Buddy is built with:
 pnpm install
 
 # Start development server
-pnpm tauri dev
+pnpm dev:tauri
 
 # Build for production
 pnpm tauri build

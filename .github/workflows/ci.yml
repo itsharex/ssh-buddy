@@ -89,8 +89,10 @@ jobs:
         run: cargo fmt --check
 
   # Build check (ensures the app compiles)
+  # Only runs after all tests pass
   build-check:
     name: Build Check
+    needs: [test-frontend, test-rust]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

@@ -1,4 +1,1 @@
-export {
-  GitPlatformWizard,
-  GitPlatformWizard as GitHubWizard,
-} from './GitHubWizard'
+export { GitPlatformWizard } from './GitPlatformWizard'

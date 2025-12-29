@@ -191,6 +191,7 @@ export function GitPlatformWizard({
   const [isGeneratingKey, setIsGeneratingKey] = useState(false)
   const [newKeyName, setNewKeyName] = useState('')
   const [newKeyPassphrase, setNewKeyPassphrase] = useState('')
+  const [newKeyComment, setNewKeyComment] = useState('')
   const [publicKeyContent, setPublicKeyContent] = useState('')
   const [isLoadingPublicKey, setIsLoadingPublicKey] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -242,16 +243,19 @@ export function GitPlatformWizard({
       setSelectedKeyName(null)
       setNewKeyName('')
       setNewKeyPassphrase('')
+      setNewKeyComment('')
       setPublicKeyContent('')
       setIsCopied(false)
       setTestResult(null)
     }
   }, [open, defaultPlatform])
 
-  // Reset account type when platform changes (after detecting existing hosts)
+  // Reset account type and key name when platform changes
   useEffect(() => {
     setAccountType(hasExistingPlatform ? 'work' : 'primary')
-  }, [hasExistingPlatform])
+    setNewKeyName('')
+    setNewKeyComment('')
+  }, [hasExistingPlatform, selectedPlatform])
 
   // Update suggested key name when it changes
   useEffect(() => {
@@ -361,10 +365,15 @@ export function GitPlatformWizard({
 
     setIsGeneratingKey(true)
     try {
+      const defaultComment =
+        `${platform.name} ${accountType === 'work' ? 'Work' : accountType === 'personal' ? 'Personal' : ''} Account`.replace(
+          /\s+/g,
+          ' '
+        )
       await onGenerateKey({
         name: newKeyName,
         type: 'ed25519',
-        comment: `GitHub ${accountType === 'work' ? 'Work' : accountType === 'personal' ? 'Personal' : ''} Account`,
+        comment: newKeyComment.trim() || defaultComment,
         passphrase: newKeyPassphrase || undefined,
       })
       setSelectedKeyName(newKeyName)
@@ -423,7 +432,7 @@ export function GitPlatformWizard({
         HostName: platform.hostname,
         User: 'git',
         IdentityFile: `~/.ssh/${selectedKeyName}`,
-        IdentitiesOnly: 'yes',
+        IdentitiesOnly: true,
       }
       await onAddHost(config)
       addToast({
@@ -457,7 +466,7 @@ export function GitPlatformWizard({
         setTestResult({
           success: false,
           message:
-            result.errorDetails?.message ||
+            result.errorDetails?.rawMessage ||
             result.output ||
             'Connection failed',
         })
@@ -627,7 +636,7 @@ export function GitPlatformWizard({
                         <p className="font-mono text-sm truncate">{key.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {key.type.toUpperCase()}
-                          {key.bits ? ` ${key.bits} bits` : ''}
+                          {key.bitSize ? ` ${key.bitSize} bits` : ''}
                         </p>
                       </div>
                       {selectedKeyName === key.name && (
@@ -675,6 +684,24 @@ export function GitPlatformWizard({
                   placeholder="Leave empty for no passphrase"
                   className="w-full px-3 py-2 text-sm border-2 border-primary/20 bg-background focus:border-primary focus:outline-none"
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Comment (optional):
+                </label>
+                <input
+                  type="text"
+                  value={newKeyComment}
+                  onChange={(e) => setNewKeyComment(e.target.value)}
+                  placeholder={`${platform.name} ${accountType === 'work' ? 'Work' : accountType === 'personal' ? 'Personal' : ''} Account`.replace(
+                    /\s+/g,
+                    ' '
+                  )}
+                  className="w-full px-3 py-2 text-sm border-2 border-primary/20 bg-background focus:border-primary focus:outline-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used to identify the key (e.g., account description)
+                </p>
               </div>
               <Button
                 onClick={handleGenerateNewKey}

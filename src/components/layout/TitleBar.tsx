@@ -20,6 +20,10 @@ export function TitleBar({ onHelpClick }: TitleBarProps) {
     // Only handle left mouse button
     if (e.buttons !== 1) return
 
+    // Don't start dragging if clicking on interactive elements
+    const target = e.target as HTMLElement
+    if (target.closest('button')) return
+
     if (e.detail === 2) {
       // Double click to toggle maximize
       await getCurrentWindow().toggleMaximize()

@@ -75,7 +75,7 @@ function AppContent() {
   const [isResizing, setIsResizing] = useState(false)
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
-  const [gitHubWizardOpen, setGitHubWizardOpen] = useState(false)
+  const [gitPlatformWizardOpen, setGitPlatformWizardOpen] = useState(false)
   const resizeRef = useRef<HTMLDivElement>(null)
 
   // Updater hook
@@ -623,7 +623,7 @@ function AppContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setGitHubWizardOpen(true)}
+                    onClick={() => setGitPlatformWizardOpen(true)}
                     className="h-7 gap-1 px-2 text-xs"
                   >
                     <Github className="h-3.5 w-3.5" />
@@ -750,7 +750,7 @@ function AppContent() {
                       </div>
                       <Button
                         variant="outline"
-                        onClick={() => setGitHubWizardOpen(true)}
+                        onClick={() => setGitPlatformWizardOpen(true)}
                         className="gap-2"
                       >
                         <Github className="h-4 w-4" />
@@ -904,8 +904,8 @@ function AppContent() {
 
       {/* Git Platform Wizard Dialog */}
       <GitPlatformWizard
-        open={gitHubWizardOpen}
-        onOpenChange={setGitHubWizardOpen}
+        open={gitPlatformWizardOpen}
+        onOpenChange={setGitPlatformWizardOpen}
         hosts={hosts}
         keys={keys}
         onAddHost={addHost}

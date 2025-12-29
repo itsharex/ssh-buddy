@@ -235,7 +235,7 @@ jobs:
           prerelease: false
 
   update-homebrew:
-    needs: build-macos
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     # Works for both workflow_run (tag in head_branch) and workflow_dispatch
     if: startsWith(github.event.workflow_run.head_branch || github.ref, 'v') || startsWith(github.ref, 'refs/tags/v')
@@ -252,8 +252,8 @@ jobs:
             echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Wait for release assets
-        run: sleep 60
+      - name: Wait for release assets to be available
+        run: sleep 120
 
       - name: Download and calculate SHA256
         id: sha

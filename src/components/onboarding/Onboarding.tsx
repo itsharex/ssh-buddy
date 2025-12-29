@@ -203,9 +203,9 @@ const steps: Step[] = [
         <div className="space-y-3">
           <StepItem
             number={1}
-            text="Click the + button to add your first host"
+            text="Use 'Connect Git' to set up GitHub/GitLab SSH"
           />
-          <StepItem number={2} text="Use templates for common configurations" />
+          <StepItem number={2} text="Or click + to add hosts manually" />
           <StepItem number={3} text="Generate new keys in the Keys tab" />
           <StepItem number={4} text="Add tags to organize your hosts" />
         </div>

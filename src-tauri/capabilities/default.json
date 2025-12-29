@@ -9,6 +9,7 @@
     "core:window:allow-toggle-maximize",
     "fs:default",
     "shell:default",
+    "shell:allow-open",
     {
       "identifier": "shell:allow-execute",
       "allow": [

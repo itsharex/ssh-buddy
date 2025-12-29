@@ -10,6 +10,7 @@ import {
   FileText,
   ChevronDown,
   Shield,
+  Github,
 } from 'lucide-react'
 import { TitleBar } from '@/components/layout'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -48,6 +49,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { TipsProvider, useTips } from '@/hooks/useTips'
 import { Onboarding } from '@/components/onboarding'
+import { GitPlatformWizard } from '@/components/wizard'
 import { UpdateDialog } from '@/components/ui/UpdateDialog'
 import { useUpdater } from '@/hooks/useUpdater'
 import { cn } from '@/lib/utils'
@@ -73,6 +75,7 @@ function AppContent() {
   const [isResizing, setIsResizing] = useState(false)
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [gitHubWizardOpen, setGitHubWizardOpen] = useState(false)
   const resizeRef = useRef<HTMLDivElement>(null)
 
   // Updater hook
@@ -616,31 +619,42 @@ function AppContent() {
                 </span>
               </div>
               {activeTab === 'hosts' ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Add
-                      <ChevronDown className="h-3 w-3 ml-0.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem onClick={handleAddHost}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Host
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setHostTemplatesOpen(true)}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      From Template
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setGitHubWizardOpen(true)}
+                    className="h-7 gap-1 px-2 text-xs"
+                  >
+                    <Github className="h-3.5 w-3.5" />
+                    Connect Git
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add
+                        <ChevronDown className="h-3 w-3 ml-0.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem onClick={handleAddHost}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Host
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setHostTemplatesOpen(true)}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        From Template
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               ) : (
                 <Button
                   variant="ghost"
@@ -714,19 +728,36 @@ function AppContent() {
                     />
                   </div>
                 ) : (
-                  <EmptyState
-                    icon={Server}
-                    title="No Host Selected"
-                    description="Select a host from the list to view its details, or create a new host configuration."
-                    action={{
-                      label: 'Add Host',
-                      onClick: handleAddHost,
-                    }}
-                    secondaryAction={{
-                      label: 'Use Template',
-                      onClick: () => setHostTemplatesOpen(true),
-                    }}
-                  />
+                  <div className="space-y-6">
+                    <EmptyState
+                      icon={Server}
+                      title="No Host Selected"
+                      description="Select a host from the list, or create a new host configuration."
+                      action={{
+                        label: 'Add Host',
+                        onClick: handleAddHost,
+                      }}
+                      secondaryAction={{
+                        label: 'Use Template',
+                        onClick: () => setHostTemplatesOpen(true),
+                      }}
+                    />
+                    <div className="flex flex-col items-center">
+                      <div className="flex items-center gap-3 text-muted-foreground text-xs mb-3">
+                        <div className="h-px w-12 bg-border" />
+                        <span>Quick Setup</span>
+                        <div className="h-px w-12 bg-border" />
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => setGitHubWizardOpen(true)}
+                        className="gap-2"
+                      >
+                        <Github className="h-4 w-4" />
+                        Connect GitHub / GitLab / Bitbucket
+                      </Button>
+                    </div>
+                  </div>
                 )
               ) : activeTab === 'keys' ? (
                 currentKey ? (
@@ -869,6 +900,17 @@ function AppContent() {
         open={onboardingOpen}
         onOpenChange={setOnboardingOpen}
         onComplete={() => setOnboardingOpen(false)}
+      />
+
+      {/* Git Platform Wizard Dialog */}
+      <GitPlatformWizard
+        open={gitHubWizardOpen}
+        onOpenChange={setGitHubWizardOpen}
+        hosts={hosts}
+        keys={keys}
+        onAddHost={addHost}
+        onGenerateKey={generateKey}
+        onGetPublicKey={getPublicKey}
       />
     </div>
   )

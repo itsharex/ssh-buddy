@@ -281,11 +281,8 @@ export function HostDetail({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center bg-primary/10 border-brutal border-primary/40 shadow-brutal-sm relative">
+          <div className="flex h-14 w-14 items-center justify-center bg-primary/10 border-brutal border-primary/40 shadow-brutal-sm">
             <Server className="h-7 w-7 text-primary" />
-            {isFavorite && (
-              <Star className="absolute -top-1 -right-1 h-5 w-5 fill-amber-500 text-amber-500" />
-            )}
           </div>
           <div>
             <h2 className="text-2xl font-bold text-foreground">{host.Host}</h2>
@@ -416,6 +413,7 @@ export function HostDetail({
       {/* Quick Connect Command */}
       <div className="border-brutal border-primary/30 bg-card overflow-hidden shadow-brutal-dark-sm">
         <div className="flex items-center justify-between gap-4 p-4">
+          {/* Command display */}
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-muted border-2 border-primary/20">
               <Terminal className="h-5 w-5 text-muted-foreground" />
@@ -429,7 +427,8 @@ export function HostDetail({
               </code>
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 shrink-0">
             {!showPreflight && host.IdentityFile && (
               <Button
                 variant="ghost"

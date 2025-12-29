@@ -11,9 +11,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::fs;
-use tokio::net::UnixStream;
 use tokio::sync::Mutex;
 use tokio::time::timeout;
+
+#[cfg(unix)]
+use tokio::net::UnixStream;
 
 /// SSH error type
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -410,7 +412,8 @@ impl SshConnectionService {
         })
     }
 
-    /// Authenticate using SSH agent
+    /// Authenticate using SSH agent (Unix version)
+    #[cfg(unix)]
     async fn authenticate_with_agent(
         session: &mut client::Handle<ClientHandler>,
         user: &str,
@@ -494,6 +497,24 @@ impl SshConnectionService {
         }
 
         Err("No matching key found in SSH agent".to_string())
+    }
+
+    /// Authenticate using SSH agent (Windows version)
+    #[cfg(windows)]
+    async fn authenticate_with_agent(
+        _session: &mut client::Handle<ClientHandler>,
+        _user: &str,
+        _key_path: &std::path::Path,
+    ) -> Result<bool, String> {
+        // Windows: russh_keys AgentClient requires tokio AsyncRead/AsyncWrite
+        // Windows named pipes don't implement these traits directly
+        // For now, return an error indicating agent auth is not supported
+        // Users should add their key to the agent and use direct key auth
+        Err(
+            "SSH agent authentication via named pipe is not yet fully supported on Windows. \
+             Please ensure your key is loaded in the agent and try again."
+                .to_string(),
+        )
     }
 
     /// Test SSH connection

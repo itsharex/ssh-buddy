@@ -12,6 +12,13 @@ use tokio::fs;
 #[cfg(unix)]
 use tokio::net::UnixStream;
 
+#[cfg(windows)]
+use std::fs::OpenOptions;
+#[cfg(windows)]
+use std::io::Write;
+#[cfg(windows)]
+use std::os::windows::fs::OpenOptionsExt;
+
 // SSH Agent protocol constants
 const SSH_AGENTC_REQUEST_IDENTITIES: u8 = 11;
 const SSH_AGENT_IDENTITIES_ANSWER: u8 = 12;
@@ -100,10 +107,66 @@ impl AgentService {
         Self::connect().await.is_ok()
     }
 
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     pub async fn is_running() -> bool {
-        // Windows: temporarily use ssh-add -l command to check
-        false
+        // Windows: Check if OpenSSH agent named pipe exists
+        Self::connect_windows_pipe().is_ok()
+    }
+
+    /// Connect to Windows OpenSSH agent via named pipe
+    #[cfg(windows)]
+    fn connect_windows_pipe() -> SshResult<std::fs::File> {
+        use std::os::windows::fs::OpenOptionsExt;
+        const PIPE_PATH: &str = r"\\.\pipe\openssh-ssh-agent";
+
+        OpenOptions::new()
+            .read(true)
+            .write(true)
+            .custom_flags(0x40000000) // FILE_FLAG_OVERLAPPED
+            .open(PIPE_PATH)
+            .map_err(|_| SshBuddyError::AgentNotRunning)
+    }
+
+    /// Send request and read response via Windows named pipe (blocking)
+    #[cfg(windows)]
+    fn send_request_windows(pipe: &mut std::fs::File, request: &[u8]) -> SshResult<Vec<u8>> {
+        // Send request length + request content
+        let mut msg = Vec::new();
+        WriteBytesExt::write_u32::<BigEndian>(&mut msg, request.len() as u32).map_err(|e| {
+            SshBuddyError::IoError {
+                message: e.to_string(),
+            }
+        })?;
+        msg.extend_from_slice(request);
+
+        pipe.write_all(&msg).map_err(|e| SshBuddyError::IoError {
+            message: e.to_string(),
+        })?;
+        pipe.flush().map_err(|e| SshBuddyError::IoError {
+            message: e.to_string(),
+        })?;
+
+        // Read response length
+        let mut len_buf = [0u8; 4];
+        pipe.read_exact(&mut len_buf)
+            .map_err(|e| SshBuddyError::IoError {
+                message: e.to_string(),
+            })?;
+
+        let len = ReadBytesExt::read_u32::<BigEndian>(&mut Cursor::new(&len_buf)).map_err(|e| {
+            SshBuddyError::IoError {
+                message: e.to_string(),
+            }
+        })? as usize;
+
+        // Read response content
+        let mut response = vec![0u8; len];
+        pipe.read_exact(&mut response)
+            .map_err(|e| SshBuddyError::IoError {
+                message: e.to_string(),
+            })?;
+
+        Ok(response)
     }
 
     /// List all keys in Agent
@@ -191,12 +254,89 @@ impl AgentService {
         Ok(keys)
     }
 
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     pub async fn list_keys() -> SshResult<Vec<AgentKeyInfo>> {
-        // Windows: direct Agent communication not yet supported
-        Err(SshBuddyError::Unknown {
-            message: "Agent communication not yet supported on Windows".to_string(),
-        })
+        // Windows: Use named pipe to communicate with OpenSSH agent
+        let mut pipe = Self::connect_windows_pipe()?;
+
+        // Send REQUEST_IDENTITIES request
+        let request = vec![SSH_AGENTC_REQUEST_IDENTITIES];
+        let response = Self::send_request_windows(&mut pipe, &request)?;
+
+        // Parse response (same as Unix)
+        if response.is_empty() {
+            return Err(SshBuddyError::AgentNotRunning);
+        }
+
+        let msg_type = response[0];
+        if msg_type == SSH_AGENT_FAILURE {
+            return Ok(Vec::new());
+        }
+
+        if msg_type != SSH_AGENT_IDENTITIES_ANSWER {
+            return Err(SshBuddyError::Unknown {
+                message: format!("Unexpected response type: {}", msg_type),
+            });
+        }
+
+        // Parse key list
+        let mut cursor = Cursor::new(&response[1..]);
+        let num_keys = cursor
+            .read_u32::<BigEndian>()
+            .map_err(|e| SshBuddyError::IoError {
+                message: e.to_string(),
+            })? as usize;
+
+        let mut keys = Vec::with_capacity(num_keys);
+
+        for _ in 0..num_keys {
+            // Read public key blob
+            let blob_len = cursor
+                .read_u32::<BigEndian>()
+                .map_err(|e| SshBuddyError::IoError {
+                    message: e.to_string(),
+                })? as usize;
+
+            let mut blob = vec![0u8; blob_len];
+            cursor
+                .read_exact(&mut blob)
+                .map_err(|e| SshBuddyError::IoError {
+                    message: e.to_string(),
+                })?;
+
+            // Read comment
+            let comment_len =
+                cursor
+                    .read_u32::<BigEndian>()
+                    .map_err(|e| SshBuddyError::IoError {
+                        message: e.to_string(),
+                    })? as usize;
+
+            let mut comment_bytes = vec![0u8; comment_len];
+            cursor
+                .read_exact(&mut comment_bytes)
+                .map_err(|e| SshBuddyError::IoError {
+                    message: e.to_string(),
+                })?;
+
+            let comment = String::from_utf8_lossy(&comment_bytes).to_string();
+
+            // Try to parse public key to get more information
+            if let Ok(pub_key) = PublicKey::from_bytes(&blob) {
+                let fingerprint = pub_key.fingerprint(ssh_key::HashAlg::Sha256).to_string();
+                let key_type = pub_key.algorithm().as_str().to_string();
+                let bit_size = Self::get_key_bit_size(&pub_key);
+
+                keys.push(AgentKeyInfo {
+                    bit_size,
+                    fingerprint,
+                    comment,
+                    key_type,
+                });
+            }
+        }
+
+        Ok(keys)
     }
 
     /// Get bit size from public key

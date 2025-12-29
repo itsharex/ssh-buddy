@@ -63,6 +63,17 @@ Or download the latest `.dmg` from Releases and drag to Applications.
 
 Download the latest `.msi` from Releases and run the installer.
 
+#### Prerequisites
+
+For full SSH Agent functionality, enable the OpenSSH Authentication Agent service:
+
+```powershell
+# Run PowerShell as Administrator
+Get-Service ssh-agent | Set-Service -StartupType Automatic -PassThru | Start-Service
+```
+
+Or enable via Services (services.msc) → OpenSSH Authentication Agent → Startup type: Automatic → Start.
+
 ## 🛠️ Development
 
 SSH Buddy is built with:

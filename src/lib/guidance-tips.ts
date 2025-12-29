@@ -76,10 +76,11 @@ export const PERMISSION_DENIED_TIP: TipDefinition = {
   suggestions: [
     'Verify the correct IdentityFile is specified in your Host config',
     'Confirm your public key is added to the remote service (e.g., GitHub SSH Keys settings)',
-    'Check that key file permissions are correct (private key should be 600)',
+    'Check key file permissions (600 on macOS/Linux, restricted ACL on Windows)',
+    'On Windows: ensure OpenSSH Agent is running and key is added',
   ],
   details:
-    'Authentication failures usually occur because: 1) Wrong key is being used 2) Public key not added to remote service 3) Key file permissions are too open (SSH rejects insecure keys).',
+    'Authentication failures usually occur because: 1) Wrong key is being used 2) Public key not added to remote service 3) Key file permissions are too open (SSH rejects insecure keys). On Windows, also check that the OpenSSH Authentication Agent service is running.',
 }
 
 // Extended diagnostic tips
@@ -91,12 +92,12 @@ export const KEY_PERMISSIONS_TIP: TipDefinition = {
   description:
     'SSH requires private keys to have restricted permissions for security.',
   suggestions: [
-    'Private key (id_ed25519, id_rsa) must have 600 permissions',
-    'Public key (*.pub) can have 644 permissions',
-    '~/.ssh directory should have 700 permissions',
+    'On macOS/Linux: Private key must have 600 permissions (chmod 600 ~/.ssh/your_key)',
+    'On Windows: Use icacls to restrict access to current user only',
+    '~/.ssh directory should have 700 permissions (macOS/Linux) or restricted ACL (Windows)',
   ],
   details:
-    'SSH refuses to use private keys that are readable by other users. This protects your key from being stolen. Run "chmod 600 ~/.ssh/your_key" to fix the permissions.',
+    'SSH refuses to use private keys that are readable by other users. This protects your key from being stolen. On Windows, use "icacls your_key /inheritance:r /grant:r %USERNAME%:F" to fix permissions.',
 }
 
 export const SSH_AGENT_TIP: TipDefinition = {
@@ -107,11 +108,12 @@ export const SSH_AGENT_TIP: TipDefinition = {
     "The SSH agent stores your keys in memory so you don't have to enter the passphrase every time.",
   suggestions: [
     'Add your key to the agent: ssh-add ~/.ssh/your_key',
-    'On macOS, use --apple-use-keychain to store in Keychain',
+    'On macOS: use --apple-use-keychain to store in Keychain',
+    'On Windows: ensure OpenSSH Authentication Agent service is running',
     'The agent keeps your key until you log out or explicitly remove it',
   ],
   details:
-    "When you have a passphrase-protected key, SSH needs the passphrase to decrypt it. The SSH agent stores the decrypted key in memory, so subsequent connections don't need the passphrase. This is both convenient and secure.",
+    "When you have a passphrase-protected key, SSH needs the passphrase to decrypt it. The SSH agent stores the decrypted key in memory, so subsequent connections don't need the passphrase. On Windows, enable the OpenSSH Authentication Agent service via Services (services.msc) or PowerShell: Get-Service ssh-agent | Set-Service -StartupType Automatic -PassThru | Start-Service",
 }
 
 export const PASSPHRASE_TIP: TipDefinition = {
@@ -124,9 +126,10 @@ export const PASSPHRASE_TIP: TipDefinition = {
     'Add the key to SSH agent to avoid entering passphrase repeatedly',
     'On macOS: ssh-add --apple-use-keychain ~/.ssh/your_key',
     'On Linux: ssh-add ~/.ssh/your_key',
+    'On Windows: ssh-add %USERPROFILE%\\.ssh\\your_key (ensure OpenSSH Agent is running)',
   ],
   details:
-    'A passphrase-protected key is encrypted at rest. Even if someone copies your private key file, they cannot use it without the passphrase. The SSH agent lets you enter the passphrase once per session.',
+    'A passphrase-protected key is encrypted at rest. Even if someone copies your private key file, they cannot use it without the passphrase. The SSH agent lets you enter the passphrase once per session. On Windows, the OpenSSH Authentication Agent service must be running.',
 }
 
 export const WRONG_KEY_TIP: TipDefinition = {

@@ -3,7 +3,9 @@ use crate::services::{PermissionCheckResult, PermissionFixResult, PermissionServ
 
 /// Check key file permissions
 #[tauri::command]
-pub async fn check_key_permissions(key_path: String) -> Result<PermissionCheckResult, SshBuddyError> {
+pub async fn check_key_permissions(
+    key_path: String,
+) -> Result<PermissionCheckResult, SshBuddyError> {
     log::info!("[permissions] Checking permissions for: {}", key_path);
     let result = PermissionService::check_key_permissions(&key_path).await?;
     log::info!("[permissions] Check result: {:?}", result);

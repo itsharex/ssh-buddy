@@ -123,7 +123,9 @@ impl SshConfigParser {
     /// Find host configuration by alias
     #[allow(dead_code)]
     pub fn find_host<'a>(hosts: &'a [HostConfig], alias: &str) -> Option<&'a HostConfig> {
-        hosts.iter().find(|h| Self::match_pattern(&h.host_pattern, alias))
+        hosts
+            .iter()
+            .find(|h| Self::match_pattern(&h.host_pattern, alias))
     }
 
     /// Match host pattern (supports * wildcard)
@@ -219,7 +221,13 @@ Host github
     #[test]
     fn test_wildcard_pattern() {
         assert!(SshConfigParser::match_pattern("*", "anything"));
-        assert!(SshConfigParser::match_pattern("*.example.com", "test.example.com"));
-        assert!(!SshConfigParser::match_pattern("*.example.com", "test.other.com"));
+        assert!(SshConfigParser::match_pattern(
+            "*.example.com",
+            "test.example.com"
+        ));
+        assert!(!SshConfigParser::match_pattern(
+            "*.example.com",
+            "test.other.com"
+        ));
     }
 }

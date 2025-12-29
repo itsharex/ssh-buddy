@@ -45,9 +45,11 @@ pub fn validate_key_name(key_name: &str) -> SshResult<()> {
 #[allow(dead_code)]
 pub fn validate_path_in_ssh_dir(path: &Path, ssh_dir: &Path) -> SshResult<()> {
     // Canonicalize path
-    let canonical_path = path.canonicalize().map_err(|_| SshBuddyError::InvalidPath {
-        message: format!("Cannot resolve path: {}", path.display()),
-    })?;
+    let canonical_path = path
+        .canonicalize()
+        .map_err(|_| SshBuddyError::InvalidPath {
+            message: format!("Cannot resolve path: {}", path.display()),
+        })?;
 
     let canonical_ssh_dir = ssh_dir
         .canonicalize()

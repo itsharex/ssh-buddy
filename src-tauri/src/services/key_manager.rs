@@ -159,9 +159,11 @@ impl KeyManager {
         let path = PathBuf::from(key_path);
 
         // Ensure path is within SSH directory
-        let canonical_path = path.canonicalize().map_err(|_| SshBuddyError::KeyNotFound {
-            path: key_path.to_string(),
-        })?;
+        let canonical_path = path
+            .canonicalize()
+            .map_err(|_| SshBuddyError::KeyNotFound {
+                path: key_path.to_string(),
+            })?;
 
         let canonical_ssh_dir = self
             .ssh_dir
@@ -175,11 +177,11 @@ impl KeyManager {
         }
 
         // Read public key
-        let content = fs::read_to_string(&path).await.map_err(|_| {
-            SshBuddyError::KeyNotFound {
+        let content = fs::read_to_string(&path)
+            .await
+            .map_err(|_| SshBuddyError::KeyNotFound {
                 path: key_path.to_string(),
-            }
-        })?;
+            })?;
 
         // Parse public key
         let pub_key = PublicKey::from_openssh(&content)?;
@@ -224,30 +226,26 @@ impl KeyManager {
 
         // Generate private key
         let private_key = match options.key_type.to_lowercase().as_str() {
-            "ed25519" => {
-                PrivateKey::random(&mut OsRng, Algorithm::Ed25519).map_err(|e| {
-                    SshBuddyError::Unknown {
-                        message: format!("Failed to generate Ed25519 key: {}", e),
-                    }
-                })?
-            }
+            "ed25519" => PrivateKey::random(&mut OsRng, Algorithm::Ed25519).map_err(|e| {
+                SshBuddyError::Unknown {
+                    message: format!("Failed to generate Ed25519 key: {}", e),
+                }
+            })?,
             "rsa" => {
                 // Use rsa crate to generate 4096-bit RSA key, then convert to ssh-key format
                 use rsa::RsaPrivateKey;
                 use ssh_key::private::RsaKeypair;
 
-                let rsa_private = RsaPrivateKey::new(&mut OsRng, 4096).map_err(|e| {
-                    SshBuddyError::Unknown {
+                let rsa_private =
+                    RsaPrivateKey::new(&mut OsRng, 4096).map_err(|e| SshBuddyError::Unknown {
                         message: format!("Failed to generate RSA key: {}", e),
-                    }
-                })?;
+                    })?;
 
                 // Convert to ssh-key's RsaKeypair
-                let rsa_keypair = RsaKeypair::try_from(rsa_private).map_err(|e| {
-                    SshBuddyError::Unknown {
+                let rsa_keypair =
+                    RsaKeypair::try_from(rsa_private).map_err(|e| SshBuddyError::Unknown {
                         message: format!("Failed to convert RSA key: {}", e),
-                    }
-                })?;
+                    })?;
 
                 PrivateKey::from(rsa_keypair)
             }
@@ -290,9 +288,11 @@ impl KeyManager {
 
         // Serialize public key
         let public_key = private_key.public_key();
-        let public_key_openssh = public_key.to_openssh().map_err(|e| SshBuddyError::Unknown {
-            message: format!("Failed to serialize public key: {}", e),
-        })?;
+        let public_key_openssh = public_key
+            .to_openssh()
+            .map_err(|e| SshBuddyError::Unknown {
+                message: format!("Failed to serialize public key: {}", e),
+            })?;
 
         // Public key format: <algorithm> <base64> <comment>
         let public_key_content = if comment.is_empty() {
@@ -411,10 +411,7 @@ mod tests {
             KeyType::Ed25519
         );
         assert_eq!(manager.infer_key_type_from_name("id_rsa"), KeyType::Rsa);
-        assert_eq!(
-            manager.infer_key_type_from_name("id_ecdsa"),
-            KeyType::Ecdsa
-        );
+        assert_eq!(manager.infer_key_type_from_name("id_ecdsa"), KeyType::Ecdsa);
         assert_eq!(manager.infer_key_type_from_name("my_key"), KeyType::Unknown);
     }
 
@@ -425,10 +422,7 @@ mod tests {
         };
 
         assert_eq!(manager.infer_key_type_from_name("id_dsa"), KeyType::Dsa);
-        assert_eq!(
-            manager.infer_key_type_from_name("my_dsa_key"),
-            KeyType::Dsa
-        );
+        assert_eq!(manager.infer_key_type_from_name("my_dsa_key"), KeyType::Dsa);
     }
 
     #[test]

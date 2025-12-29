@@ -134,7 +134,7 @@ impl PermissionService {
         let output = std::process::Command::new("icacls")
             .args([
                 key_path,
-                "/inheritance:r",  // Remove inheritance
+                "/inheritance:r", // Remove inheritance
                 "/grant:r",
                 &format!("{}:F", whoami::username()), // Only give current user full control
             ])

@@ -32,11 +32,12 @@ impl KnownHostsService {
         }
 
         // Read existing content
-        let content = fs::read_to_string(&known_hosts_path).await.map_err(|e| {
-            SshBuddyError::IoError {
-                message: format!("Failed to read known_hosts: {}", e),
-            }
-        })?;
+        let content =
+            fs::read_to_string(&known_hosts_path)
+                .await
+                .map_err(|e| SshBuddyError::IoError {
+                    message: format!("Failed to read known_hosts: {}", e),
+                })?;
 
         // Filter out matching lines
         let hostname_lower = hostname.to_lowercase();
@@ -186,15 +187,12 @@ impl KnownHostsService {
         // Read SSH version identification
         let mut reader = BufReader::new(stream);
         let mut version_line = String::new();
-        timeout(
-            Duration::from_secs(5),
-            reader.read_line(&mut version_line),
-        )
-        .await
-        .map_err(|_| SshBuddyError::ConnectionTimeout)?
-        .map_err(|e| SshBuddyError::IoError {
-            message: e.to_string(),
-        })?;
+        timeout(Duration::from_secs(5), reader.read_line(&mut version_line))
+            .await
+            .map_err(|_| SshBuddyError::ConnectionTimeout)?
+            .map_err(|e| SshBuddyError::IoError {
+                message: e.to_string(),
+            })?;
 
         // Send our version
         let mut stream = reader.into_inner();
@@ -317,36 +315,63 @@ mod tests {
 
     #[test]
     fn test_matches_hostname_standard() {
-        assert!(matches_hostname("github.com ssh-ed25519 AAAA...", "github.com"));
-        assert!(!matches_hostname("github.com ssh-ed25519 AAAA...", "gitlab.com"));
+        assert!(matches_hostname(
+            "github.com ssh-ed25519 AAAA...",
+            "github.com"
+        ));
+        assert!(!matches_hostname(
+            "github.com ssh-ed25519 AAAA...",
+            "gitlab.com"
+        ));
     }
 
     #[test]
     fn test_matches_hostname_with_port() {
-        assert!(matches_hostname("[example.com]:2222 ssh-ed25519 AAAA...", "example.com"));
+        assert!(matches_hostname(
+            "[example.com]:2222 ssh-ed25519 AAAA...",
+            "example.com"
+        ));
     }
 
     #[test]
     fn test_matches_hostname_multiple() {
-        assert!(matches_hostname("github.com,192.168.1.1 ssh-ed25519 AAAA...", "github.com"));
-        assert!(matches_hostname("github.com,192.168.1.1 ssh-ed25519 AAAA...", "192.168.1.1"));
+        assert!(matches_hostname(
+            "github.com,192.168.1.1 ssh-ed25519 AAAA...",
+            "github.com"
+        ));
+        assert!(matches_hostname(
+            "github.com,192.168.1.1 ssh-ed25519 AAAA...",
+            "192.168.1.1"
+        ));
     }
 
     #[test]
     fn test_matches_hostname_skip_hashed() {
-        assert!(!matches_hostname("|1|hash1|hash2 ssh-ed25519 AAAA...", "anything"));
+        assert!(!matches_hostname(
+            "|1|hash1|hash2 ssh-ed25519 AAAA...",
+            "anything"
+        ));
     }
 
     #[test]
     fn test_matches_hostname_skip_comments() {
-        assert!(!matches_hostname("# github.com ssh-ed25519 AAAA...", "github.com"));
+        assert!(!matches_hostname(
+            "# github.com ssh-ed25519 AAAA...",
+            "github.com"
+        ));
         assert!(!matches_hostname("", "github.com"));
     }
 
     #[test]
     fn test_matches_hostname_case_insensitive() {
-        assert!(matches_hostname("GITHUB.COM ssh-ed25519 AAAA...", "github.com"));
-        assert!(matches_hostname("github.com ssh-ed25519 AAAA...", "GITHUB.COM"));
+        assert!(matches_hostname(
+            "GITHUB.COM ssh-ed25519 AAAA...",
+            "github.com"
+        ));
+        assert!(matches_hostname(
+            "github.com ssh-ed25519 AAAA...",
+            "GITHUB.COM"
+        ));
     }
 
     // ========================================

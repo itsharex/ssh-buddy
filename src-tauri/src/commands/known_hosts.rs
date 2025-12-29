@@ -16,7 +16,11 @@ pub async fn add_known_host(
     hostname: String,
     port: Option<u16>,
 ) -> Result<KnownHostAddResult, SshBuddyError> {
-    log::info!("[known_hosts] Adding host: {}:{}", hostname, port.unwrap_or(22));
+    log::info!(
+        "[known_hosts] Adding host: {}:{}",
+        hostname,
+        port.unwrap_or(22)
+    );
     let result = KnownHostsService::add_host(&hostname, port).await?;
     log::info!("[known_hosts] Add result: {:?}", result);
     Ok(result)

@@ -221,10 +221,7 @@ impl client::Handler for ClientHandler {
             log::info!("[ssh_connection] Host key matched for {}", self.hostname);
             KnownHostStatus::Matched
         } else if found_host {
-            log::warn!(
-                "[ssh_connection] Host key CHANGED for {}!",
-                self.hostname
-            );
+            log::warn!("[ssh_connection] Host key CHANGED for {}!", self.hostname);
             KnownHostStatus::Changed
         } else {
             log::info!(
@@ -307,7 +304,10 @@ impl SshConnectionService {
 
             // Skip hashed format (starts with |1|)
             if line.starts_with("|1|") {
-                log::debug!("[ssh_connection] Skipping hashed entry at line {}", line_count);
+                log::debug!(
+                    "[ssh_connection] Skipping hashed entry at line {}",
+                    line_count
+                );
                 continue;
             }
 
@@ -388,14 +388,13 @@ impl SshConnectionService {
     }
 
     /// Load private key
-    async fn load_private_key(
-        key_path: &PathBuf,
-    ) -> SshResult<russh_keys::key::KeyPair> {
-        let key_content = fs::read_to_string(key_path).await.map_err(|_| {
-            SshBuddyError::KeyNotFound {
-                path: key_path.to_string_lossy().to_string(),
-            }
-        })?;
+    async fn load_private_key(key_path: &PathBuf) -> SshResult<russh_keys::key::KeyPair> {
+        let key_content =
+            fs::read_to_string(key_path)
+                .await
+                .map_err(|_| SshBuddyError::KeyNotFound {
+                    path: key_path.to_string_lossy().to_string(),
+                })?;
 
         // Try loading without password
         russh_keys::decode_secret_key(&key_content, None).map_err(|e| {
@@ -433,10 +432,7 @@ impl SshConnectionService {
             .await
             .map_err(|e| format!("Failed to request identities from agent: {}", e))?;
 
-        log::info!(
-            "[ssh_connection] Agent has {} identities",
-            identities.len()
-        );
+        log::info!("[ssh_connection] Agent has {} identities", identities.len());
 
         if identities.is_empty() {
             return Err("No keys in SSH agent".to_string());
@@ -475,9 +471,8 @@ impl SshConnectionService {
                 log::info!("[ssh_connection] Trying agent key for authentication");
 
                 // Use authenticate_future with agent for authentication
-                let (returned_agent, auth_result) = session
-                    .authenticate_future(user, identity, agent)
-                    .await;
+                let (returned_agent, auth_result) =
+                    session.authenticate_future(user, identity, agent).await;
 
                 // Take back agent ownership for subsequent use
                 agent = returned_agent;
@@ -529,7 +524,8 @@ impl SshConnectionService {
                     error_details: Some(SshErrorDetails {
                         error_type: SshErrorType::IdentityFileNotFound,
                         raw_message: format!("Identity file not found: {}", path.display()),
-                        suggestion: "Check your SSH config and ensure the key file exists.".to_string(),
+                        suggestion: "Check your SSH config and ensure the key file exists."
+                            .to_string(),
                         can_auto_fix: false,
                         fix_type: None,
                         fix_params: None,
@@ -630,7 +626,10 @@ impl SshConnectionService {
                         "Hostname could not be resolved. Check the hostname spelling.".to_string(),
                     )
                 } else {
-                    (SshErrorType::Unknown, format!("Connection failed: {}", error_msg))
+                    (
+                        SshErrorType::Unknown,
+                        format!("Connection failed: {}", error_msg),
+                    )
                 };
 
                 return Ok(ConnectionTestResult {
@@ -661,7 +660,8 @@ impl SshConnectionService {
                     error_details: Some(SshErrorDetails {
                         error_type: SshErrorType::Timeout,
                         raw_message: "Connection timed out after 10 seconds".to_string(),
-                        suggestion: "Check your network connection and firewall settings.".to_string(),
+                        suggestion: "Check your network connection and firewall settings."
+                            .to_string(),
                         can_auto_fix: false,
                         fix_type: None,
                         fix_params: None,
@@ -747,7 +747,9 @@ impl SshConnectionService {
             Ok(key_pair) => {
                 // Key can be loaded directly, use it for authentication
                 debug_log.push("Key loaded directly, authenticating...".to_string());
-                session.authenticate_publickey(&user, Arc::new(key_pair)).await
+                session
+                    .authenticate_publickey(&user, Arc::new(key_pair))
+                    .await
             }
             Err(e) => {
                 let error_msg = e.to_string();
@@ -758,7 +760,9 @@ impl SshConnectionService {
                 if is_encrypted {
                     // Key is encrypted, try using SSH agent
                     debug_log.push("Key is encrypted, trying SSH agent...".to_string());
-                    log::info!("[ssh_connection] Key is encrypted, attempting SSH agent authentication");
+                    log::info!(
+                        "[ssh_connection] Key is encrypted, attempting SSH agent authentication"
+                    );
 
                     match Self::authenticate_with_agent(&mut session, &user, &key_path).await {
                         Ok(authenticated) => Ok(authenticated),
@@ -769,18 +773,25 @@ impl SshConnectionService {
 
                             return Ok(ConnectionTestResult {
                                 success: false,
-                                output: "Key requires passphrase and is not in SSH agent".to_string(),
+                                output: "Key requires passphrase and is not in SSH agent"
+                                    .to_string(),
                                 platform,
                                 error_type: Some(SshErrorType::PermissionDeniedPassphrase),
                                 error_details: Some(SshErrorDetails {
                                     error_type: SshErrorType::PermissionDeniedPassphrase,
-                                    raw_message: format!("Key encrypted: {}. Agent error: {}", error_msg, agent_err),
+                                    raw_message: format!(
+                                        "Key encrypted: {}. Agent error: {}",
+                                        error_msg, agent_err
+                                    ),
                                     suggestion: "Add your key to the SSH agent first.".to_string(),
                                     can_auto_fix: true,
                                     fix_type: Some("ssh-add".to_string()),
                                     fix_params: Some({
                                         let mut params = std::collections::HashMap::new();
-                                        params.insert("keyPath".to_string(), key_path.to_string_lossy().to_string());
+                                        params.insert(
+                                            "keyPath".to_string(),
+                                            key_path.to_string_lossy().to_string(),
+                                        );
                                         params
                                     }),
                                 }),
@@ -841,7 +852,8 @@ impl SshConnectionService {
                                         _ => {}
                                     }
                                 }
-                            }).await;
+                            })
+                            .await;
 
                             // Ignore timeout error, as some servers don't close connection
                             let _ = wait_result;
@@ -878,7 +890,8 @@ impl SshConnectionService {
                         error_details: Some(SshErrorDetails {
                             error_type: SshErrorType::PermissionDenied,
                             raw_message: "Authentication failed".to_string(),
-                            suggestion: "Check that your public key is added to the server.".to_string(),
+                            suggestion: "Check that your public key is added to the server."
+                                .to_string(),
                             can_auto_fix: false,
                             fix_type: None,
                             fix_params: None,
@@ -902,7 +915,8 @@ impl SshConnectionService {
                     error_details: Some(SshErrorDetails {
                         error_type: SshErrorType::PermissionDenied,
                         raw_message: error_msg,
-                        suggestion: "Check that your public key is added to the server.".to_string(),
+                        suggestion: "Check that your public key is added to the server."
+                            .to_string(),
                         can_auto_fix: false,
                         fix_type: None,
                         fix_params: None,
@@ -984,10 +998,7 @@ mod tests {
         let host_variants = if port == 22 {
             vec![hostname.to_string()]
         } else {
-            vec![
-                format!("[{}]:{}", hostname, port),
-                hostname.to_string(),
-            ]
+            vec![format!("[{}]:{}", hostname, port), hostname.to_string()]
         };
 
         let mut found_host = false;
@@ -1119,9 +1130,8 @@ github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk
 
     #[test]
     fn test_check_server_key_unknown() {
-        let known_hosts = parse_known_hosts_content(
-            "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk",
-        );
+        let known_hosts =
+            parse_known_hosts_content("github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk");
 
         let status = check_host_key_status(
             "gitlab.com",
@@ -1135,9 +1145,8 @@ github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk
 
     #[test]
     fn test_check_server_key_changed() {
-        let known_hosts = parse_known_hosts_content(
-            "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOldKey",
-        );
+        let known_hosts =
+            parse_known_hosts_content("github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOldKey");
 
         let status = check_host_key_status(
             "github.com",
@@ -1209,7 +1218,10 @@ github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk
     #[test]
     fn test_detect_platform_unknown() {
         assert_eq!(SshConnectionService::detect_platform("example.com"), None);
-        assert_eq!(SshConnectionService::detect_platform("myserver.local"), None);
+        assert_eq!(
+            SshConnectionService::detect_platform("myserver.local"),
+            None
+        );
     }
 
     // ========================================
@@ -1225,13 +1237,17 @@ github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnk
 
     #[test]
     fn test_is_auth_success_gitlab() {
-        assert!(SshConnectionService::is_auth_success("Welcome to GitLab, @username!"));
+        assert!(SshConnectionService::is_auth_success(
+            "Welcome to GitLab, @username!"
+        ));
     }
 
     #[test]
     fn test_is_auth_success_generic() {
         assert!(SshConnectionService::is_auth_success("logged in as user"));
-        assert!(SshConnectionService::is_auth_success("Welcome! You are authenticated."));
+        assert!(SshConnectionService::is_auth_success(
+            "Welcome! You are authenticated."
+        ));
     }
 
     #[test]

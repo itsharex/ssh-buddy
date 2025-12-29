@@ -53,10 +53,11 @@ impl AgentService {
 
         // Send request length + request content
         let mut msg = Vec::new();
-        WriteBytesExt::write_u32::<BigEndian>(&mut msg, request.len() as u32)
-            .map_err(|e| SshBuddyError::IoError {
+        WriteBytesExt::write_u32::<BigEndian>(&mut msg, request.len() as u32).map_err(|e| {
+            SshBuddyError::IoError {
                 message: e.to_string(),
-            })?;
+            }
+        })?;
         msg.extend_from_slice(request);
 
         stream
@@ -75,10 +76,11 @@ impl AgentService {
                 message: e.to_string(),
             })?;
 
-        let len = ReadBytesExt::read_u32::<BigEndian>(&mut Cursor::new(&len_buf))
-            .map_err(|e| SshBuddyError::IoError {
+        let len = ReadBytesExt::read_u32::<BigEndian>(&mut Cursor::new(&len_buf)).map_err(|e| {
+            SshBuddyError::IoError {
                 message: e.to_string(),
-            })? as usize;
+            }
+        })? as usize;
 
         // Read response content
         let mut response = vec![0u8; len];
@@ -131,42 +133,43 @@ impl AgentService {
 
         // Parse key list
         let mut cursor = Cursor::new(&response[1..]);
-        let num_keys = cursor.read_u32::<BigEndian>().map_err(|e| {
-            SshBuddyError::IoError {
+        let num_keys = cursor
+            .read_u32::<BigEndian>()
+            .map_err(|e| SshBuddyError::IoError {
                 message: e.to_string(),
-            }
-        })? as usize;
+            })? as usize;
 
         let mut keys = Vec::with_capacity(num_keys);
 
         for _ in 0..num_keys {
             // Read public key blob
-            let blob_len = cursor.read_u32::<BigEndian>().map_err(|e| {
-                SshBuddyError::IoError {
+            let blob_len = cursor
+                .read_u32::<BigEndian>()
+                .map_err(|e| SshBuddyError::IoError {
                     message: e.to_string(),
-                }
-            })? as usize;
+                })? as usize;
 
             let mut blob = vec![0u8; blob_len];
-            cursor.read_exact(&mut blob).map_err(|e| {
-                SshBuddyError::IoError {
+            cursor
+                .read_exact(&mut blob)
+                .map_err(|e| SshBuddyError::IoError {
                     message: e.to_string(),
-                }
-            })?;
+                })?;
 
             // Read comment
-            let comment_len = cursor.read_u32::<BigEndian>().map_err(|e| {
-                SshBuddyError::IoError {
-                    message: e.to_string(),
-                }
-            })? as usize;
+            let comment_len =
+                cursor
+                    .read_u32::<BigEndian>()
+                    .map_err(|e| SshBuddyError::IoError {
+                        message: e.to_string(),
+                    })? as usize;
 
             let mut comment_bytes = vec![0u8; comment_len];
-            cursor.read_exact(&mut comment_bytes).map_err(|e| {
-                SshBuddyError::IoError {
+            cursor
+                .read_exact(&mut comment_bytes)
+                .map_err(|e| SshBuddyError::IoError {
                     message: e.to_string(),
-                }
-            })?;
+                })?;
 
             let comment = String::from_utf8_lossy(&comment_bytes).to_string();
 
@@ -227,11 +230,12 @@ impl AgentService {
             PathBuf::from(format!("{}.pub", key_path))
         };
 
-        let pub_key_content = fs::read_to_string(&pub_key_path).await.map_err(|_| {
-            SshBuddyError::KeyNotFound {
-                path: pub_key_path.to_string_lossy().to_string(),
-            }
-        })?;
+        let pub_key_content =
+            fs::read_to_string(&pub_key_path)
+                .await
+                .map_err(|_| SshBuddyError::KeyNotFound {
+                    path: pub_key_path.to_string_lossy().to_string(),
+                })?;
 
         let pub_key = PublicKey::from_openssh(&pub_key_content)?;
         let target_fingerprint = pub_key.fingerprint(ssh_key::HashAlg::Sha256).to_string();
@@ -269,9 +273,7 @@ impl AgentService {
             // Extract base64 content
             let base64_content: String = content
                 .lines()
-                .filter(|line| {
-                    !line.starts_with("-----") && !line.is_empty()
-                })
+                .filter(|line| !line.starts_with("-----") && !line.is_empty())
                 .collect();
 
             // Decode base64
@@ -297,13 +299,12 @@ impl AgentService {
                         if decoded.len() >= 19 + cipher_len {
                             let cipher_name = &decoded[19..19 + cipher_len];
                             if let Ok(cipher_str) = std::str::from_utf8(cipher_name) {
-                                log::info!(
-                                    "[agent_service] OpenSSH key cipher: '{}'",
-                                    cipher_str
-                                );
+                                log::info!("[agent_service] OpenSSH key cipher: '{}'", cipher_str);
 
                                 if cipher_str == "none" {
-                                    log::info!("[agent_service] Key is NOT encrypted (cipher=none)");
+                                    log::info!(
+                                        "[agent_service] Key is NOT encrypted (cipher=none)"
+                                    );
                                     return false;
                                 } else {
                                     log::info!(
@@ -338,7 +339,9 @@ impl AgentService {
                     || err_str.contains("cipher")
                     || err_str.contains("encrypted")
                 {
-                    log::info!("[agent_service] Key is encrypted (parse error indicates encryption)");
+                    log::info!(
+                        "[agent_service] Key is encrypted (parse error indicates encryption)"
+                    );
                     true
                 } else {
                     // Other errors - possibly format issue rather than encryption
@@ -396,7 +399,10 @@ impl AgentService {
 
         // Key has no passphrase, add using ssh-add command
         // Use tokio with timeout for async command to avoid any blocking
-        log::info!("[agent_service] Running ssh-add for unencrypted key: {}", key_path);
+        log::info!(
+            "[agent_service] Running ssh-add for unencrypted key: {}",
+            key_path
+        );
 
         let key_path_owned = key_path.to_string();
         let result = tokio::time::timeout(
@@ -408,8 +414,9 @@ impl AgentService {
                     .stdout(Stdio::piped())
                     .stderr(Stdio::piped())
                     .output()
-            })
-        ).await;
+            }),
+        )
+        .await;
 
         match result {
             Ok(Ok(Ok(output))) => {
@@ -462,10 +469,15 @@ impl AgentService {
             }
             Err(_) => {
                 // Timeout - possibly waiting for passphrase input
-                log::warn!("[agent_service] ssh-add timed out, key likely needs passphrase: {}", key_path);
+                log::warn!(
+                    "[agent_service] ssh-add timed out, key likely needs passphrase: {}",
+                    key_path
+                );
                 Ok(AddKeyResult {
                     success: false,
-                    message: "This key requires a passphrase. Please run 'ssh-add' manually in terminal.".to_string(),
+                    message:
+                        "This key requires a passphrase. Please run 'ssh-add' manually in terminal."
+                            .to_string(),
                     needs_passphrase: true,
                 })
             }
@@ -484,11 +496,10 @@ impl AgentService {
 
         // Write script
         {
-            let mut file = std::fs::File::create(&script_path).map_err(|e| {
-                SshBuddyError::IoError {
+            let mut file =
+                std::fs::File::create(&script_path).map_err(|e| SshBuddyError::IoError {
                     message: format!("Failed to create askpass script: {}", e),
-                }
-            })?;
+                })?;
 
             // Script content: output passphrase
             writeln!(file, "#!/bin/sh").map_err(|e| SshBuddyError::IoError {
@@ -730,7 +741,9 @@ EncryptedKeyDataHere...
     #[test]
     fn test_is_key_encrypted_nonexistent_file() {
         // Should return false for non-existent file
-        assert!(!AgentService::is_key_encrypted("/nonexistent/path/id_ed25519"));
+        assert!(!AgentService::is_key_encrypted(
+            "/nonexistent/path/id_ed25519"
+        ));
     }
 
     // ========================================

@@ -95,10 +95,7 @@ impl AgentService {
     /// Check if SSH Agent is running
     #[cfg(unix)]
     pub async fn is_running() -> bool {
-        match Self::connect().await {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        Self::connect().await.is_ok()
     }
 
     #[cfg(not(unix))]

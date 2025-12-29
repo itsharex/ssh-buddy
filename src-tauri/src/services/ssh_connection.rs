@@ -415,7 +415,7 @@ impl SshConnectionService {
     async fn authenticate_with_agent(
         session: &mut client::Handle<ClientHandler>,
         user: &str,
-        key_path: &PathBuf,
+        key_path: &std::path::Path,
     ) -> Result<bool, String> {
         // Connect to SSH agent
         let agent_path = std::env::var("SSH_AUTH_SOCK")
@@ -447,7 +447,7 @@ impl SshConnectionService {
         let target_pubkey = match fs::read_to_string(&pub_key_path).await {
             Ok(content) => {
                 // Parse public key to get fingerprint or base64
-                let parts: Vec<&str> = content.trim().split_whitespace().collect();
+                let parts: Vec<&str> = content.split_whitespace().collect();
                 if parts.len() >= 2 {
                     Some(parts[1].to_string()) // base64 part
                 } else {

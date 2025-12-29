@@ -47,7 +47,7 @@ impl KeyManager {
             let path = entry.path();
 
             // Only process .pub files
-            if path.extension().map_or(false, |ext| ext == "pub") {
+            if path.extension().is_some_and(|ext| ext == "pub") {
                 if let Some(key_info) = self.parse_public_key_file(&path).await {
                     keys.push(key_info);
                 }
@@ -324,7 +324,7 @@ impl KeyManager {
         // Get key information
         let key_type = KeyType::from(public_key.algorithm().as_str());
         let fingerprint = public_key.fingerprint(ssh_key::HashAlg::Sha256).to_string();
-        let bit_size = self.get_key_bit_size(&public_key);
+        let bit_size = self.get_key_bit_size(public_key);
 
         log::info!(
             "[key_manager] Generated {} key: {}",

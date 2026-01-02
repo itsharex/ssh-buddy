@@ -35,6 +35,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip'
 import { TagManager } from './TagManager'
+import { GitCommandsPanel } from './GitCommandsPanel'
 import type { SSHHostConfig } from '@/lib/ssh-config'
 import type { HostMetadata } from '@/lib/metadata-service'
 import {
@@ -497,6 +498,9 @@ export function HostDetail({
           />
         )}
       </div>
+
+      {/* Git Commands Panel */}
+      <GitCommandsPanel hostAlias={host.Host} />
 
       {/* Last Used Info */}
       {metadata?.lastUsed && (

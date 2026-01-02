@@ -15,7 +15,7 @@ export default defineConfig({
   clearScreen: false,
   // Tauri expects a fixed port
   server: {
-    port: 5173,
+    port: 5170,
     strictPort: true,
     watch: {
       ignored: ['**/src-tauri/**'],

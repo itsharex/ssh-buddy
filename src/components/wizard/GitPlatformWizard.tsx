@@ -35,6 +35,7 @@ import { useToast } from '@/components/common'
 import type { SSHHostConfig } from '@/lib/ssh-config'
 import type { SSHKeyInfo } from '@/lib/ssh-service'
 import { testSSHConnection } from '@/lib/ssh-service'
+import { GitCommandsPanel } from '@/components/hosts/GitCommandsPanel'
 
 type WizardStep = 'platform' | 'welcome' | 'key' | 'copy' | 'config' | 'test'
 
@@ -859,12 +860,11 @@ export function GitPlatformWizard({
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-muted p-4 space-y-2">
-                  <p className="text-sm font-medium">You're all set! Try:</p>
-                  <code className="block text-xs bg-background p-2 rounded font-mono">
-                    git clone git@{suggestedAlias}:username/repo.git
-                  </code>
-                </div>
+                <GitCommandsPanel
+                  hostAlias={suggestedAlias}
+                  defaultExpanded={true}
+                  className="border-green-500/30"
+                />
               </div>
             ) : (
               <div className="space-y-4">

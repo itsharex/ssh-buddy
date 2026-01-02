@@ -238,21 +238,24 @@ export async function checkKnownHosts(): Promise<KnownHostsResult> {
       }
     }
 
-    // Check for duplicate entries
-    const hostCounts = new Map<string, number>()
+    // Check for duplicate entries (same host + same key type = duplicate)
+    // Note: Same host with different key types (ed25519, rsa, ecdsa) is normal
+    const hostKeyTypeCounts = new Map<string, number>()
     for (const entry of entries) {
       for (const host of entry.hosts) {
-        hostCounts.set(host, (hostCounts.get(host) || 0) + 1)
+        const key = `${host}:${entry.keyType}`
+        hostKeyTypeCounts.set(key, (hostKeyTypeCounts.get(key) || 0) + 1)
       }
     }
 
-    for (const [host, count] of hostCounts) {
+    for (const [hostKeyType, count] of hostKeyTypeCounts) {
       if (count > 1) {
+        const [host, keyType] = hostKeyType.split(':')
         issues.push({
-          id: `known-host-dup-${host}`,
+          id: `known-host-dup-${hostKeyType}`,
           severity: 'warning',
           title: 'Duplicate Host Entry',
-          description: `"${host}" appears ${count} times in known_hosts.`,
+          description: `"${host}" has ${count} entries with the same key type (${keyType}).`,
           affectedItem: host,
           suggestion: 'Remove duplicate entries to avoid confusion.',
           action: {

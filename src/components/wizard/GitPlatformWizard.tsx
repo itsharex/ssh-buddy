@@ -197,6 +197,7 @@ export function GitPlatformWizard({
   const [isLoadingPublicKey, setIsLoadingPublicKey] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
   const [isCreatingConfig, setIsCreatingConfig] = useState(false)
+  const [configCreated, setConfigCreated] = useState(false) // Track if config was already created
   const [isTesting, setIsTesting] = useState(false)
   const [testResult, setTestResult] = useState<{
     success: boolean
@@ -247,6 +248,7 @@ export function GitPlatformWizard({
       setNewKeyComment('')
       setPublicKeyContent('')
       setIsCopied(false)
+      setConfigCreated(false)
       setTestResult(null)
     }
   }, [open, defaultPlatform])
@@ -426,6 +428,12 @@ export function GitPlatformWizard({
   }
 
   const handleCreateConfig = async () => {
+    // If config was already created, just move to test step
+    if (configCreated) {
+      setCurrentStep('test')
+      return
+    }
+
     setIsCreatingConfig(true)
     try {
       const config: SSHHostConfig = {
@@ -436,6 +444,7 @@ export function GitPlatformWizard({
         IdentitiesOnly: true,
       }
       await onAddHost(config)
+      setConfigCreated(true)
       addToast({
         type: 'success',
         title: 'Configuration created',
@@ -786,9 +795,23 @@ export function GitPlatformWizard({
       case 'config':
         return (
           <div className="space-y-4">
-            <p className="text-muted-foreground">
-              This configuration will be added to your SSH config:
-            </p>
+            {configCreated ? (
+              <>
+                <div className="rounded-lg bg-green-500/10 border border-green-500/30 p-4">
+                  <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                    Configuration already created
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Host "{suggestedAlias}" has been added to your SSH config.
+                    Click "Next" to continue testing.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                This configuration will be added to your SSH config:
+              </p>
+            )}
 
             <div className="rounded-lg bg-muted p-4 font-mono text-sm space-y-1">
               <p className="text-muted-foreground">
@@ -1038,7 +1061,7 @@ export function GitPlatformWizard({
                   Done
                   <Check className="h-4 w-4 ml-1" />
                 </>
-              ) : currentStep === 'config' ? (
+              ) : currentStep === 'config' && !configCreated ? (
                 <>
                   Create Config
                   <ArrowRight className="h-4 w-4 ml-1" />

@@ -137,11 +137,20 @@ export function serializeSSHConfig(config: ParsedSSHConfig): string {
 
 /**
  * Add a new host to the config
+ * Throws an error if a host with the same alias already exists
  */
 export function addHost(
   config: ParsedSSHConfig,
   host: SSHHostConfig
 ): ParsedSSHConfig {
+  // Check for duplicate host alias
+  const existingHost = config.hosts.find(
+    (h) => h.Host.toLowerCase() === host.Host.toLowerCase()
+  )
+  if (existingHost) {
+    throw new Error(`Host alias "${host.Host}" already exists`)
+  }
+
   const newLines: ConfigLine[] = [...config.lines]
   const newHosts: SSHHostConfig[] = [...config.hosts]
 
